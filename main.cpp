@@ -1,9 +1,13 @@
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <vector>
 
 #include <SFML/Graphics.hpp>
 
 const unsigned int kWindowWidth = 600;
 const float kBoundaryWidth = 500;
+const unsigned int kBottomMargin = 40;
 const float kBlockWidth = 25;
 const float kBallRadius = 12.5;
 const int kMsPerTick = 20;
@@ -15,15 +19,17 @@ const struct {
 } kColorPalette;
 
 struct Ball {
-    sf::Vector2f vel;
     sf::CircleShape shape;
+    sf::Vector2f vel;
+    unsigned int block_count;  // number of blocks whose color is same as the ball
 
-    Ball(const sf::Vector2f& pos, const sf::Vector2f& vel, const sf::Color& color) {
+    Ball(const sf::Vector2f& pos, const sf::Vector2f& vel, const sf::Color& color, unsigned int block_count) {
         this->shape.setRadius(kBallRadius);
         this->shape.setOrigin(kBallRadius, kBallRadius);
         this->shape.setPosition(pos);
         this->shape.setFillColor(color);
         this->vel = vel;
+        this->block_count = block_count;
     }
 };
 
@@ -34,8 +40,8 @@ inline sf::Color getOppoColor(sf::Color& color) {
 }
 
 int main(void) {
-    sf::RenderWindow window(sf::VideoMode(kWindowWidth, kWindowWidth), "Pong Wars");
-    sf::View view(sf::Vector2f(kBoundaryWidth / 2, kBoundaryWidth / 2), sf::Vector2f(kWindowWidth, kWindowWidth));
+    sf::RenderWindow window(sf::VideoMode(kWindowWidth, kWindowWidth + kBottomMargin), "Pong Wars");
+    sf::View view(sf::Vector2f(kBoundaryWidth / 2, (kBoundaryWidth + kBottomMargin) / 2), sf::Vector2f(kWindowWidth, kWindowWidth + kBottomMargin));
     window.setView(view);
 
     // background
@@ -43,8 +49,8 @@ int main(void) {
     float gap_width = (kWindowWidth - kBoundaryWidth) / 2.0;
     bg[0].position = sf::Vector2f(-gap_width, -gap_width);
     bg[1].position = sf::Vector2f(kBoundaryWidth + gap_width, -gap_width);
-    bg[2].position = sf::Vector2f(kBoundaryWidth + gap_width, kBoundaryWidth + gap_width);
-    bg[3].position = sf::Vector2f(-gap_width, kBoundaryWidth + gap_width);
+    bg[2].position = sf::Vector2f(kBoundaryWidth + gap_width, kBoundaryWidth + gap_width + kBottomMargin);
+    bg[3].position = sf::Vector2f(-gap_width, kBoundaryWidth + gap_width + kBottomMargin);
     bg[0].color = kColorPalette.ocean_noir;
     bg[1].color = kColorPalette.ocean_noir;
     bg[2].color = kColorPalette.mystic_mint;
@@ -70,12 +76,28 @@ int main(void) {
             }
         }
     }
+    unsigned int block_num_per_color = block_num_per_dim * block_num_per_dim / 2;
 
     // balls
     std::vector<Ball> balls = {
-        Ball({100, 20}, {-1, 1}, kColorPalette.nocturnal_expedition),
-        Ball({350, 230}, {1, 1}, kColorPalette.mystic_mint),
+        Ball({100, 20}, {-1, 1}, kColorPalette.nocturnal_expedition, block_num_per_color),
+        Ball({350, 230}, {1, 1}, kColorPalette.mystic_mint, block_num_per_color),
     };
+
+    // text
+    sf::Font font;
+    if (!font.loadFromFile("./ComicMono.ttf")) {
+        std::cerr << "Failed to load the font!" << std::endl;
+        return 1;
+    }
+
+    sf::Text info;
+    info.setFont(font);
+    info.setCharacterSize(16);
+    info.setFillColor(kColorPalette.ocean_noir);
+    info.setString("day xxx | night xxx");  // placeholder
+    float text_x = (kBoundaryWidth - info.getGlobalBounds().getSize().x) / 2;
+    info.setPosition(sf::Vector2f(text_x, kBoundaryWidth + kBottomMargin / 2.0));
 
     sf::Clock clock;
 
@@ -111,10 +133,12 @@ int main(void) {
                 if (left_block.getFillColor() == ball_color) {
                     left_block.setFillColor(getOppoColor(ball_color));
                     ball.vel.x *= -1;
+                    ball.block_count--;
                 }
                 if (right_block.getFillColor() == ball_color) {
                     right_block.setFillColor(getOppoColor(ball_color));
                     ball.vel.x *= -1;
+                    ball.block_count--;
                 }
             }
             if (pos.y - kBallRadius < 0 || pos.y + kBallRadius >= kBoundaryWidth) {
@@ -126,15 +150,21 @@ int main(void) {
                 if (top_block.getFillColor() == ball_color) {
                     top_block.setFillColor(getOppoColor(ball_color));
                     ball.vel.y *= -1;
+                    ball.block_count--;
                 }
                 if (bottom_block.getFillColor() == ball_color) {
                     bottom_block.setFillColor(getOppoColor(ball_color));
                     ball.vel.y *= -1;
+                    ball.block_count--;
                 }
             }
 
             ball.shape.move(ball.vel.x, ball.vel.y);
         }
+
+        std::stringstream ss;
+        ss << "day " << std::setw(3) << balls[1].block_count << " | " << "night " << std::setw(3) << balls[0].block_count;
+        info.setString(ss.str());
 
         window.draw(bg);
         for (int i = 0; i < block_num_per_dim; i++) {
@@ -145,6 +175,7 @@ int main(void) {
         for (auto& ball : balls) {
             window.draw(ball.shape);
         }
+        window.draw(info);
         window.display();
     }
 
