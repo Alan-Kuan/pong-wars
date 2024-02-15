@@ -2,10 +2,10 @@
 
 #include <SFML/Graphics.hpp>
 
-const unsigned int kWindowWidth = 640;
+const unsigned int kWindowWidth = 600;
 const float kBoundaryWidth = 500;
-const float kBlockWidth = 20;
-const float kBallRadius = 10;
+const float kBlockWidth = 25;
+const float kBallRadius = 12.5;
 const int kMsPerTick = 20;
 
 const struct {
@@ -35,7 +35,7 @@ inline sf::Color getOppoColor(sf::Color& color) {
 
 int main(void) {
     sf::RenderWindow window(sf::VideoMode(kWindowWidth, kWindowWidth), "Pong Wars");
-    sf::View view(sf::Vector2f(kBoundaryWidth / 2.0, kBoundaryWidth / 2.0), sf::Vector2f(kWindowWidth, kWindowWidth));
+    sf::View view(sf::Vector2f(kBoundaryWidth / 2, kBoundaryWidth / 2), sf::Vector2f(kWindowWidth, kWindowWidth));
     window.setView(view);
 
     // background
