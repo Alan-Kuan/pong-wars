@@ -14,6 +14,25 @@ const struct {
     sf::Color ocean_noir{23, 43, 54};
 } kColorPalette;
 
+struct Ball {
+    sf::Vector2f vel;
+    sf::CircleShape shape;
+
+    Ball(const sf::Vector2f& pos, const sf::Vector2f& vel, const sf::Color& color) {
+        this->shape.setRadius(kBallRadius);
+        this->shape.setOrigin(kBallRadius, kBallRadius);
+        this->shape.setPosition(pos);
+        this->shape.setFillColor(color);
+        this->vel = vel;
+    }
+};
+
+inline sf::Color getOppoColor(sf::Color& color) {
+    return color == kColorPalette.mystic_mint
+        ? kColorPalette.nocturnal_expedition
+        : kColorPalette.mystic_mint;
+}
+
 int main(void) {
     sf::RenderWindow window(sf::VideoMode(kWindowWidth, kWindowWidth), "Pong Wars");
     sf::View view(sf::Vector2f(kBoundaryWidth / 2.0, kBoundaryWidth / 2.0), sf::Vector2f(kWindowWidth, kWindowWidth));
@@ -52,14 +71,11 @@ int main(void) {
         }
     }
 
-    // ball
-    sf::CircleShape ball;
-    ball.setPosition(350, 230);
-    ball.setRadius(kBallRadius);
-    ball.setOrigin(kBallRadius, kBallRadius);
-    ball.setFillColor(kColorPalette.mystic_mint);
-
-    sf::Vector2f ball_vel(1, 1);
+    // balls
+    std::vector<Ball> balls = {
+        Ball({100, 20}, {-1, 1}, kColorPalette.nocturnal_expedition),
+        Ball({350, 230}, {1, 1}, kColorPalette.mystic_mint),
+    };
 
     sf::Clock clock;
 
@@ -76,46 +92,49 @@ int main(void) {
             continue;
         }
 
-        sf::Vector2f pos = ball.getPosition();
-        int i = pos.x / kBlockWidth;
-        int j = pos.y / kBlockWidth;
-        int left_side_i = (pos.x - kBallRadius) / kBlockWidth;
-        int right_side_i = (pos.x + kBallRadius) / kBlockWidth;
-        int top_side_j = (pos.y - kBallRadius) / kBlockWidth;
-        int bottom_side_j = (pos.y + kBallRadius) / kBlockWidth;
+        for (auto& ball : balls) {
+            sf::Color ball_color = ball.shape.getFillColor();
+            sf::Vector2f pos = ball.shape.getPosition();
+            int i = pos.x / kBlockWidth;
+            int j = pos.y / kBlockWidth;
+            int left_side_i = (pos.x - kBallRadius) / kBlockWidth;
+            int right_side_i = (pos.x + kBallRadius) / kBlockWidth;
+            int top_side_j = (pos.y - kBallRadius) / kBlockWidth;
+            int bottom_side_j = (pos.y + kBallRadius) / kBlockWidth;
 
-        if (pos.x - kBallRadius < 0 || pos.x + kBallRadius >= kBoundaryWidth) {
-            ball_vel.x *= -1;
-        } else {
-            auto& left_block = blocks[left_side_i][j];
-            auto& right_block = blocks[right_side_i][j];
+            if (pos.x - kBallRadius < 0 || pos.x + kBallRadius >= kBoundaryWidth) {
+                ball.vel.x *= -1;
+            } else {
+                auto& left_block = blocks[left_side_i][j];
+                auto& right_block = blocks[right_side_i][j];
 
-            if (left_block.getFillColor() == kColorPalette.mystic_mint) {
-                left_block.setFillColor(kColorPalette.nocturnal_expedition);
-                ball_vel.x *= -1;
+                if (left_block.getFillColor() == ball_color) {
+                    left_block.setFillColor(getOppoColor(ball_color));
+                    ball.vel.x *= -1;
+                }
+                if (right_block.getFillColor() == ball_color) {
+                    right_block.setFillColor(getOppoColor(ball_color));
+                    ball.vel.x *= -1;
+                }
             }
-            if (right_block.getFillColor() == kColorPalette.mystic_mint) {
-                right_block.setFillColor(kColorPalette.nocturnal_expedition);
-                ball_vel.x *= -1;
+            if (pos.y - kBallRadius < 0 || pos.y + kBallRadius >= kBoundaryWidth) {
+                ball.vel.y *= -1;
+            } else {
+                auto& top_block = blocks[i][top_side_j];
+                auto& bottom_block = blocks[i][bottom_side_j];
+
+                if (top_block.getFillColor() == ball_color) {
+                    top_block.setFillColor(getOppoColor(ball_color));
+                    ball.vel.y *= -1;
+                }
+                if (bottom_block.getFillColor() == ball_color) {
+                    bottom_block.setFillColor(getOppoColor(ball_color));
+                    ball.vel.y *= -1;
+                }
             }
+
+            ball.shape.move(ball.vel.x, ball.vel.y);
         }
-        if (pos.y - kBallRadius < 0 || pos.y + kBallRadius >= kBoundaryWidth) {
-            ball_vel.y *= -1;
-        } else {
-            auto& top_block = blocks[i][top_side_j];
-            auto& bottom_block = blocks[i][bottom_side_j];
-
-            if (top_block.getFillColor() == kColorPalette.mystic_mint) {
-                top_block.setFillColor(kColorPalette.nocturnal_expedition);
-                ball_vel.y *= -1;
-            }
-            if (bottom_block.getFillColor() == kColorPalette.mystic_mint) {
-                bottom_block.setFillColor(kColorPalette.nocturnal_expedition);
-                ball_vel.y *= -1;
-            }
-        }
-
-        ball.move(ball_vel.x, ball_vel.y);
 
         window.draw(bg);
         for (int i = 0; i < block_num_per_dim; i++) {
@@ -123,7 +142,9 @@ int main(void) {
                 window.draw(blocks[i][j]);
             }
         }
-        window.draw(ball);
+        for (auto& ball : balls) {
+            window.draw(ball.shape);
+        }
         window.display();
     }
 
