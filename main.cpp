@@ -40,7 +40,7 @@ inline sf::Color getOppoColor(sf::Color& color) {
 }
 
 int main(void) {
-    sf::RenderWindow window(sf::VideoMode(kWindowWidth, kWindowWidth + kBottomMargin), "Pong Wars");
+    sf::RenderWindow window(sf::VideoMode(kWindowWidth, kWindowWidth + kBottomMargin), "Pong Wars", sf::Style::Titlebar | sf::Style::Close);
     sf::View view(sf::Vector2f(kBoundaryWidth / 2, (kBoundaryWidth + kBottomMargin) / 2), sf::Vector2f(kWindowWidth, kWindowWidth + kBottomMargin));
     window.setView(view);
 
