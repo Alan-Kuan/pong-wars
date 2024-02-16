@@ -21,15 +21,13 @@ const struct {
 struct Ball {
     sf::CircleShape shape;
     sf::Vector2f vel;
-    unsigned int block_count;  // number of blocks whose color is same as the ball
 
-    Ball(const sf::Vector2f& pos, const sf::Vector2f& vel, const sf::Color& color, unsigned int block_count) {
+    Ball(const sf::Vector2f& pos, const sf::Vector2f& vel, const sf::Color& color) {
         this->shape.setRadius(kBallRadius);
         this->shape.setOrigin(kBallRadius, kBallRadius);
         this->shape.setPosition(pos);
         this->shape.setFillColor(color);
         this->vel = vel;
-        this->block_count = block_count;
     }
 };
 
@@ -77,11 +75,12 @@ int main(void) {
         }
     }
     unsigned int block_num_per_color = block_num_per_dim * block_num_per_dim / 2;
+    unsigned int block_counts[2] = { block_num_per_color, block_num_per_color };
 
     // balls
     std::vector<Ball> balls = {
-        Ball({100, 20}, {-1, 1}, kColorPalette.nocturnal_expedition, block_num_per_color),
-        Ball({350, 230}, {1, 1}, kColorPalette.mystic_mint, block_num_per_color),
+        Ball({100, 20}, {-5, 5}, kColorPalette.nocturnal_expedition),
+        Ball({350, 230}, {5, 5}, kColorPalette.mystic_mint),
     };
 
     // text
@@ -114,7 +113,8 @@ int main(void) {
             continue;
         }
 
-        for (auto& ball : balls) {
+        for (int idx = 0; idx < 2; idx++) {
+            Ball& ball = balls[idx];
             sf::Color ball_color = ball.shape.getFillColor();
             sf::Vector2f pos = ball.shape.getPosition();
             int i = pos.x / kBlockWidth;
@@ -133,12 +133,14 @@ int main(void) {
                 if (left_block.getFillColor() == ball_color) {
                     left_block.setFillColor(getOppoColor(ball_color));
                     ball.vel.x *= -1;
-                    ball.block_count--;
+                    block_counts[idx]--;
+                    block_counts[idx ^ 1]++;
                 }
                 if (right_block.getFillColor() == ball_color) {
                     right_block.setFillColor(getOppoColor(ball_color));
                     ball.vel.x *= -1;
-                    ball.block_count--;
+                    block_counts[idx]--;
+                    block_counts[idx ^ 1]++;
                 }
             }
             if (pos.y - kBallRadius < 0 || pos.y + kBallRadius >= kBoundaryWidth) {
@@ -150,12 +152,14 @@ int main(void) {
                 if (top_block.getFillColor() == ball_color) {
                     top_block.setFillColor(getOppoColor(ball_color));
                     ball.vel.y *= -1;
-                    ball.block_count--;
+                    block_counts[idx]--;
+                    block_counts[idx ^ 1]++;
                 }
                 if (bottom_block.getFillColor() == ball_color) {
                     bottom_block.setFillColor(getOppoColor(ball_color));
                     ball.vel.y *= -1;
-                    ball.block_count--;
+                    block_counts[idx]--;
+                    block_counts[idx ^ 1]++;
                 }
             }
 
@@ -163,7 +167,7 @@ int main(void) {
         }
 
         std::stringstream ss;
-        ss << "day " << std::setw(3) << balls[1].block_count << " | " << "night " << std::setw(3) << balls[0].block_count;
+        ss << "day " << std::setw(3) << block_counts[1] << " | " << "night " << std::setw(3) << block_counts[0];
         info.setString(ss.str());
 
         window.draw(bg);
@@ -172,7 +176,7 @@ int main(void) {
                 window.draw(blocks[i][j]);
             }
         }
-        for (auto& ball : balls) {
+        for (Ball& ball : balls) {
             window.draw(ball.shape);
         }
         window.draw(info);
