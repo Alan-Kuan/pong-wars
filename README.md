@@ -1,6 +1,6 @@
 # Pong Wars
 I found an interesting project, [Pong Wars](https://github.com/vnglst/pong-wars) a few days ago.
-As a practice, I implemented it in C++ with SFML.
+As a practice, I implemented it in C++ with [SFML](https://www.sfml-dev.org/).
 
 ## Requirements
 - [make](https://www.gnu.org/software/make/manual/make.html)
@@ -11,14 +11,13 @@ As a practice, I implemented it in C++ with SFML.
 Configure the build directory & compile the program:
 ```sh
 make config
-make build
+make
 ```
 
 Run the program:
 ```sh
 make run
 ```
-
 
 ## License
 The font, ComicMono, included in this repo is licensed under MIT License.
